@@ -6,15 +6,19 @@ from pprint import pprint
 CHANNELS = {}
 
 async def notify(change_id):
-    print(f"yeahh notifying for {change_id}")
+    print(f"SEND LOOP FOR CHANGE#{change_id}")
     #await asyncio.wait([ws.send('sync') for ws in CHANNELS[change_id]])
+    TO_REMOVE = []
     for ws in CHANNELS[change_id]:
         try:
-            print(f"sending to {ws}")
             await ws.send('sync')
+            print(f"SENT to {ws}")
         except:
-            print("caught existing failed ws")
-            print(f"{dir(ws)}")
+            print(f"caught existing failed {ws}")
+            #print(f"{dir(ws)}")
+            TO_REMOVE.append(ws)
+    if TO_REMOVE != []:
+        for ws in TO_REMOVE:
             await unregister(ws, change_id)
     pprint(f"{CHANNELS}")
 
@@ -23,15 +27,14 @@ async def register(websocket, message):
     print(f"CHANGEID is: {change_id}")
     if message['source'] == 'server':
         if change_id in CHANNELS:
-            print(f"send message to websockets linked to change")
             await notify(message['change_id'])
         else:
             print(f"{change_id} not found")
     elif message['source'] == 'client':
         if change_id in CHANNELS:
-            CHANNELS[change_id].append(websocket)
+            CHANNELS[change_id].add(websocket)
         else:
-            CHANNELS.update({change_id: [websocket]})
+            CHANNELS.update({change_id: {websocket} })
         pprint(f"{CHANNELS}")
 
 async def unregister(websocket, change_id):
@@ -55,6 +58,7 @@ async def handler(websocket, path):
 
 
 start_server = websockets.serve(handler, "localhost", 8765)
+
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
