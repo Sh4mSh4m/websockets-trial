@@ -15,6 +15,7 @@ async def notify(change_id):
         except:
             print("caught existing failed ws")
             print(f"{dir(ws)}")
+            await unregister(ws, change_id)
     pprint(f"{CHANNELS}")
 
 async def register(websocket, message):

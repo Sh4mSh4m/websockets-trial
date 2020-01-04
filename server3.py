@@ -8,6 +8,7 @@ CHANNELS = {}
 async def notify(change_id):
     print(f"yeahh notifying for {change_id}")
     await asyncio.wait([ws.send('sync') for ws in CHANNELS[change_id]])
+    pprint(f"{CHANNELS}")
 
 async def register(websocket, message):
     change_id = message.get('change_id')
@@ -25,8 +26,7 @@ async def register(websocket, message):
             CHANNELS.update({change_id: [websocket]})
         pprint(f"{CHANNELS}")
 
-async def unregister(websocket, message):
-    change_id = message.get('change_id')
+async def unregister(websocket, change_id):
     CHANNELS[change_id].remove(websocket)
     pprint(f"{CHANNELS}")
 
@@ -34,13 +34,15 @@ async def handler(websocket, path):
     try:
         async for message in websocket:
             message = json.loads(message)
+            change_id = message.get('change_id')
             if message['action'] == 'register':
                 await register(websocket, message)
             else:
-                await unregister(websocket, message)
+                await unregister(websocket, change_id)
     except:
         print('CAUGHT IT')
-        await unregister(websocket, message)
+        change_id = message.get('change_id')
+        await unregister(websocket, change_id)
         pprint(f"{CHANNELS}")
 
 
